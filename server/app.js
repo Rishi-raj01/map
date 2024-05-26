@@ -1,13 +1,14 @@
-
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { extractGPSDataFromCSV } = require('./extracter'); // Ensure this is correctly implemented
+const multer = require('multer');
+const { extractGPSDataFromCSV } = require('./extracter');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
+
+const upload = multer({ dest: 'uploads/' });
 
 const detectStoppages = (gpsData, threshold) => {
   let stoppages = [];
@@ -48,18 +49,13 @@ const detectStoppages = (gpsData, threshold) => {
   return stoppages;
 };
 
-const csvPath = 'C:/Users/rishi/OneDrive/Desktop/map/Assignment Gps Data- convertcsv.csv.csv'; // Update path to your CSV file
-
-app.post('/process-csv', async (req, res) => {
+app.post('/process-csv', upload.single('file'), async (req, res) => {
   try {
     const { threshold } = req.body;
+    const csvPath = req.file.path;
 
-    const gpsData = await extractGPSDataFromCSV(csvPath); // Use csvPath directly
-    console.log("gpsdata is", gpsData);
-
+    const gpsData = await extractGPSDataFromCSV(csvPath);
     const stoppages = detectStoppages(gpsData, threshold);
-    console.log("stoppage detected");
-    console.log(stoppages);
 
     res.json({ message: 'Data processed successfully', gpsData, stoppages });
   } catch (error) {
